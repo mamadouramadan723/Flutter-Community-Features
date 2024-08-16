@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:transverse/sidebar.dart';
 
+import 'features/device/device_info.dart';
 import 'features/video/video_screen.dart';
 
 void main() async {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       home: const MyHomePage(title: 'ML Kit APIs'),
       routes: {
         '/video_reader': (context) => const VideoPlayersScreen(),
+        '/device_info': (context) => const DeviceInfoScreen(),
         // Add more routes for other features
       },
     );
