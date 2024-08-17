@@ -16,7 +16,6 @@ class IPInfoScreen extends StatefulWidget {
 
 class _IPInfoScreenState extends State<IPInfoScreen> {
   String _ipAddress = '';
-  String _location = '';
   String _ipInfo = '';
   bool _isLoading = true;
   double _latitude = 0.0;
@@ -178,17 +177,14 @@ Cache Timestamp: $formattedTimestamp
   Future<void> _getLocation() async {
     try {
       final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+          locationSettings:
+              const LocationSettings(accuracy: LocationAccuracy.high));
       setState(() {
         _gpsLatitude = position.latitude;
         _gpsLongitude = position.longitude;
-        _location = 'GPS - Latitude: $_gpsLatitude, Longitude: $_gpsLongitude\n'
-            'IP - Latitude: $_latitude, Longitude: $_longitude';
       });
     } catch (e) {
-      setState(() {
-        _location = 'Error: $e';
-      });
+      setState(() {});
     }
   }
 
