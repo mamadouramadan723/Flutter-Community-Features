@@ -54,6 +54,13 @@ class Sidebar extends StatelessWidget {
               Navigator.pushNamed(context, '/ip_info');
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.qr_code),
+            title: const Text('QR Code Generator'),
+            onTap: () {
+              Navigator.pushNamed(context, '/qr_code_generator');
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings),

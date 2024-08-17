@@ -3,6 +3,7 @@ import 'package:transverse/sidebar.dart';
 
 import 'features/IP/ip_infos.dart';
 import 'features/device/device_info.dart';
+import 'features/qr/qr_code_generator.dart';
 import 'features/video/video_screen.dart';
 
 void main() async {
@@ -26,6 +27,8 @@ class MyApp extends StatelessWidget {
         '/video_reader': (context) => const VideoPlayersScreen(),
         '/device_info': (context) => const DeviceInfoScreen(),
         '/ip_info': (context) => const IPInfoScreen(),
+        '/qr_code_generator': (context) => const QRCodeGenerator(),
+
 
         // Add more routes for other features
       },
