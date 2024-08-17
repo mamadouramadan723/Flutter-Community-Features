@@ -21,6 +21,8 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
   bool _isLoading = true;
   double _latitude = 0.0;
   double _longitude = 0.0;
+  double _gpsLatitude = 0.0;
+  double _gpsLongitude = 0.0;
 
   @override
   void initState() {
@@ -42,24 +44,75 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('IP Address: $_ipAddress',
-                        style: const TextStyle(fontSize: 18)),
-                    const SizedBox(height: 10),
-                    Text('Location: $_location',
-                        style: const TextStyle(fontSize: 18)),
-                    const SizedBox(height: 10),
-                    const Text('IP Information:',
-                        style: TextStyle(fontSize: 18)),
-                    const SizedBox(height: 5),
-                    Text(_ipInfo, style: const TextStyle(fontSize: 16)),
+                    _buildSectionTitle('IP Address'),
+                    _buildInfoCard(content: _ipAddress),
                     const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _openMap,
-                      child: const Text('Open in Maps'),
+                    _buildSectionTitle('GPS Coordinates'),
+                    _buildInfoCard(
+                        content:
+                            'Latitude: $_gpsLatitude\nLongitude: $_gpsLongitude'),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('IP-Based Coordinates'),
+                    _buildInfoCard(
+                        content:
+                            'Latitude: $_latitude\nLongitude: $_longitude'),
+                    const SizedBox(height: 20),
+                    _buildSectionTitle('IP Information'),
+                    _buildInfoCard(content: _ipInfo),
+                    const SizedBox(height: 30),
+                    _buildMapButton(
+                      'Open GPS Location in Maps',
+                      useGPS: true,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildMapButton(
+                      'Open IP Location in Maps',
+                      useGPS: false,
                     ),
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.blueAccent,
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({required String content}) {
+    return Card(
+      elevation: 5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          content,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapButton(String label, {required bool useGPS}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => _handleMapButtonClick(useGPS: useGPS),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          textStyle: const TextStyle(fontSize: 16),
+        ),
+        child: Text(label),
       ),
     );
   }
@@ -99,8 +152,6 @@ Country: ${data['country']} (${data['countryCode']})
 Region: ${data['regionName']}
 City: ${data['city']}
 Zip: ${data['zip']}
-Latitude: ${data['lat']}
-Longitude: ${data['lon']}
 Timezone: ${data['timezone']}
 Currency: ${data['currency']}
 ISP: ${data['isp']}
@@ -125,42 +176,14 @@ Cache Timestamp: $formattedTimestamp
   }
 
   Future<void> _getLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() {
-        _location = 'Location services are disabled.';
-      });
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() {
-          _location = 'Location permissions are denied';
-        });
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        _location =
-            'Location permissions are permanently denied, we cannot request permissions.';
-      });
-      return;
-    }
-
     try {
       final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       setState(() {
-        _location =
-            'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
+        _gpsLatitude = position.latitude;
+        _gpsLongitude = position.longitude;
+        _location = 'GPS - Latitude: $_gpsLatitude, Longitude: $_gpsLongitude\n'
+            'IP - Latitude: $_latitude, Longitude: $_longitude';
       });
     } catch (e) {
       setState(() {
@@ -169,10 +192,57 @@ Cache Timestamp: $formattedTimestamp
     }
   }
 
-  void _openMap() async {
+  Future<void> _handleMapButtonClick({required bool useGPS}) async {
+    if (useGPS) {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showLocationActivationDialog();
+      } else {
+        _openMap(useGPS: true);
+      }
+    } else {
+      _openMap(useGPS: false);
+    }
+  }
+
+  void _showLocationActivationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enable GPS'),
+          content: const Text('Please enable GPS to use this feature.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _openLocationSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openLocationSettings() {
+    Geolocator.openLocationSettings();
+  }
+
+  void _openMap({required bool useGPS}) async {
     try {
+      final double latitude = useGPS ? _gpsLatitude : _latitude;
+      final double longitude = useGPS ? _gpsLongitude : _longitude;
+
       final Uri googleMapsUrl = Uri.parse(
-          'https://www.google.com/maps/search/?api=1&query=$_latitude,$_longitude');
+          'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
 
       if (await canLaunchUrl(googleMapsUrl)) {
         await launchUrl(
