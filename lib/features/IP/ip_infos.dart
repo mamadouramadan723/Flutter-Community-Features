@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class IPInfoScreen extends StatefulWidget {
   const IPInfoScreen({super.key});
@@ -15,7 +18,15 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
   String _ipAddress = '';
   String _location = '';
   String _ipInfo = '';
-  bool _isLoading = false;
+  bool _isLoading = true;
+  double _latitude = 0.0;
+  double _longitude = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIPInfo();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,40 +36,37 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton(
-              onPressed: _fetchIPInfo,
-              child: const Text('Fetch IP and Location Info'),
-            ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('IP Address: $_ipAddress'),
-                      const SizedBox(height: 10),
-                      Text('Location: $_location'),
-                      const SizedBox(height: 10),
-                      Text('IP Information: $_ipInfo'),
-                    ],
-                  ),
-          ],
-        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('IP Address: $_ipAddress',
+                        style: const TextStyle(fontSize: 18)),
+                    const SizedBox(height: 10),
+                    Text('Location: $_location',
+                        style: const TextStyle(fontSize: 18)),
+                    const SizedBox(height: 10),
+                    const Text('IP Information:',
+                        style: TextStyle(fontSize: 18)),
+                    const SizedBox(height: 5),
+                    Text(_ipInfo, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _openMap,
+                      child: const Text('Open in Maps'),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }
 
   Future<void> _fetchIPInfo() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     await _getIPAddress();
     await _getLocation();
-
     setState(() {
       _isLoading = false;
     });
@@ -71,9 +79,38 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        String formattedTimestamp = '';
+        if (data['cached'] == true && data['cacheTimestamp'] != null) {
+          int timestamp = data['cacheTimestamp'];
+          DateTime dateTime =
+              DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+          formattedTimestamp =
+              DateFormat('dd/MM/yyyy HH:mm:ss').format(dateTime);
+        }
+
         setState(() {
           _ipAddress = data['ip'];
-          _ipInfo = data.toString();
+          _latitude = data['lat'];
+          _longitude = data['lon'];
+          _ipInfo = '''
+Status: ${data['status']}
+Continent: ${data['continent']}
+Country: ${data['country']} (${data['countryCode']})
+Region: ${data['regionName']}
+City: ${data['city']}
+Zip: ${data['zip']}
+Latitude: ${data['lat']}
+Longitude: ${data['lon']}
+Timezone: ${data['timezone']}
+Currency: ${data['currency']}
+ISP: ${data['isp']}
+Organization: ${data['org']}
+AS: ${data['as']}
+Mobile: ${data['mobile']}
+Proxy: ${data['proxy']}
+Cached: ${data['cached']}
+Cache Timestamp: $formattedTimestamp
+          ''';
         });
       } else {
         setState(() {
@@ -129,6 +166,24 @@ class _IPInfoScreenState extends State<IPInfoScreen> {
       setState(() {
         _location = 'Error: $e';
       });
+    }
+  }
+
+  void _openMap() async {
+    try {
+      final Uri googleMapsUrl = Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$_latitude,$_longitude');
+
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(
+          googleMapsUrl,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw 'Could not open the map.';
+      }
+    } catch (e) {
+      log('Error opening map: $e');
     }
   }
 }
