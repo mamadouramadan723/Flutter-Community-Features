@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:transverse/sidebar.dart';
 
+import 'features/IP/ip_infos.dart';
 import 'features/device/device_info.dart';
 import 'features/video/video_screen.dart';
 
@@ -24,6 +25,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/video_reader': (context) => const VideoPlayersScreen(),
         '/device_info': (context) => const DeviceInfoScreen(),
+        '/ip_info': (context) => const IPInfoScreen(),
+
         // Add more routes for other features
       },
     );

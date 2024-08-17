@@ -47,6 +47,13 @@ class Sidebar extends StatelessWidget {
               Navigator.pushNamed(context, '/device_info');
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.devices_sharp),
+            title: const Text('IP Infos'),
+            onTap: () {
+              Navigator.pushNamed(context, '/ip_info');
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.settings),
