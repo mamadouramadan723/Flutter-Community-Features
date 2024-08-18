@@ -6,7 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pretty_qr_code/pretty_qr_code.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share/share.dart';
 
 class QRCodeGenerator extends StatefulWidget {
@@ -54,13 +54,14 @@ class QRCodeGeneratorState extends State<QRCodeGenerator> {
                 width: 200,
                 height: 200,
                 child: Center(
-                  child: PrettyQr(
-                    image: const AssetImage('assets/myLogo.png'),
-                    // Path to your logo image
-                    size: 200,
+                  child: QrImageView(
                     data: qrData,
-                    errorCorrectLevel: QrErrorCorrectLevel.M,
-                    roundEdges: true,
+                    version: QrVersions.auto,
+                    size: 200.0,
+                    embeddedImage: const AssetImage('assets/myLogo.png'),
+                    embeddedImageStyle: const QrEmbeddedImageStyle(
+                      size: Size(40, 40),
+                    ),
                   ),
                 ),
               ),
@@ -91,8 +92,8 @@ class QRCodeGeneratorState extends State<QRCodeGenerator> {
         return;
       }
 
-      ui.Image image = await boundary.toImage(
-          pixelRatio: 4.0); // Increase pixelRatio for better quality
+      // Capture the image with a higher resolution
+      ui.Image image = await boundary.toImage(pixelRatio: 4.0);
       ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
@@ -124,7 +125,7 @@ class QRCodeGeneratorState extends State<QRCodeGenerator> {
     }
   }
 
-// Function to add padding to an image
+  // Function to add padding to an image
   Future<Uint8List> _addPaddingToImage(ui.Image image) async {
     const padding = 30; // Padding amount in pixels
     final width = image.width + 2 * padding;
