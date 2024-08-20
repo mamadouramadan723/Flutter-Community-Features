@@ -1,0 +1,13 @@
+name: Schedule Supabase Edge Function
+
+on:
+  schedule:
+    - cron: '*/2 * * * *' # Runs every 2 minutes
+
+jobs:
+  run-edge-function:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase Edge Function
+        run: curl -L -X POST "https://jjbvkqjtzkkqkuducjhx.supabase.co/functions/v1/hello" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYnZrcWp0emtrcWt1ZHVjamh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTkyOTc1NzcsImV4cCI6MjAxNDg3MzU3N30.RIF9cm4DLyiOYFHxrOOv_3hXwRKXfWEu4fSqOMSwb8A" --data "{\"name\":\"Functions\"}"
+        
